@@ -45,3 +45,8 @@ block-io:
 kill-corosync:
   inject_script: ha_tools/fault_process_kill.bash
   recovery_script: ha_tools/node/reboot_node.bash
+
+crash-vm:
+  inject_script: ha_tools/vm/crash_vm_system.bash
+  recovery_script: ha_tools/vm/get_vm_status.bash
+
