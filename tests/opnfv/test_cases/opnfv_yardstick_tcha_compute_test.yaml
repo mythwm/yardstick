@@ -10,53 +10,98 @@
 
 schema: "yardstick:task:0.1"
 description: >
-    Test case for TC :compute HA.
-
+    Test case for TC :COMPUTE HA.
 {% set file = file or '/etc/yardstick/pod.yaml' %}
 {% set monitor_time = monitor_time or 60 %}
-{% set ip = ip or '192.16.1.107' %}
 
 scenarios:
 -
-  type: ServiceHA
+  type: "GeneralHA"
   options:
     attackers:
-    - fault_type: "general-attacker"
-      host: node1
-      key: "crash-vm"
-      attack_key: "crash-vm"
+      - 
+        fault_type: "general-attacker"
+        host: node1
+        key: "crash-vm"
+        attack_key: "crash-vm"
 
     monitors:
-    - monitor_type: "openstack-cmd"
-      command_name: "nova service-list | grep 'host2' | awk '{print $12}'"
-      #command_name: "nova service-list | grep 'host2'"
-      monitor_time: {{monitor_time}}
-      monitor_number: 1
-      sla:
-        max_outage_time: 5
-    - monitor_type: "openstack-cmd"
-      command_name: "openstack server show compute_wm | grep -E 'hypervisor_hostname | addresses | id'"
-      monitor_time: {{monitor_time}}
-      monitor_number: 1
-      sla:
-        max_outage_time: 5
-    - monitor_type: "openstack-cmd"
-      command_name: "nova list | grep compute_wm | awk '{print $10}'"
-      #command_name: "nova list | grep compute_vm"
-      monitor_time: {{monitor_time}}
-      monitor_number: 1
-      sla:
-        max_outage_time: 5
-    - monitor_type: "general-monitor"
-      monitor_key: "ip-status"
-      key: "vm-status"
-      host: node1
-      monitor_time: {{monitor_time}}
-      monitor_number: 1
-      sla:
-        max_outage_time: 5
-      parameter:
-        ip_address: {{ip}}
+      -
+        monitor_type: "openstack-cmd"
+        command_name: "nova service-list | grep 'host2' | awk '{print $12}'"
+        key: "node-status"
+        monitor_time: {{monitor_time}}
+        monitor_number: 1
+        sla:
+          max_outage_time: 5
+      -
+        monitor_type: "openstack-cmd"
+        command_name: "nova list | grep compute_vm | awk '{print $10}'"
+        key: "vm-status"
+        monitor_time: {{monitor_time}}
+        monitor_number: 1
+        sla:
+          max_outage_time: 5
+      -
+        monitor_type: "openstack-cmd"
+        command_name: "openstack server show compute_vm | grep -E 'hypervisor_hostname | addresses | id'"
+        key: "vm-info"
+        monitor_time: {{monitor_time}}
+        monitor_number: 1
+        sla:
+          max_outage_time: 5
+      -
+        monitor_type: "general-monitor"
+        monitor_key: "ip-status"
+        key: "vm-ip-status"
+        host: node1
+        monitor_time: {{monitor_time}}
+        monitor_number: 1
+        sla:
+          max_outage_time: 60
+        parameter:
+          ip_address: "@floating_ip"
+
+    operations:
+      -
+        operation_type: "general-operation"
+        key: "get-floatingip"
+        operation_key: "get-floatingip"
+        action_parameter:
+          server_name: "compute_vm"
+        return_parameter:
+          all: "@floating_ip"
+
+    steps:
+      -
+        actionKey: "get-floatingip"
+        actionType: "operation"
+        index: 1
+
+      -
+        actionKey: "crash-vm"
+        actionType: "attacker"
+        index: 2
+
+      -
+        actionKey: "node-status"
+        actionType: "monitor"
+        index: 3
+
+      -
+        actionKey: "vm-status"
+        actionType: "monitor"
+        index: 4
+
+      -
+        actionKey: "vm-info"
+        actionType: "monitor"
+        index: 5
+
+      -
+        actionKey: "vm-ip-status"
+        actionType: "monitor"
+        index: 6
 
 
   nodes:
